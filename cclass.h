@@ -14,30 +14,26 @@ typedef struct rval
 	char type;
 } rval;
 
+typedef void* object;
+
 typedef struct cclass
 {
 	size_t size;
-	void(*init)(void*);
-	void(*construct)(void*,const char*,va_list);
-	rval(*method)(void*,const char*,...);
+	void(*init)(object);
+	void(*construct)(object,const char*,va_list);
+	rval(*method)(object,const char*,...);
 } cclass;
-
-typedef struct object
-{
-	cclass* parent;
-	void* self;
-} object;
 
 object __oop_create(cclass c)
 {
-	object o;
-	o.parent = &c;
-	o.self = malloc(o.parent->size);
+	object o = malloc(c.size);
 	
-	void* _TEST = o.self;
+	void* _TEST = o;
+	// checks for memory
 	_OOP_MEM_CHECK
 
-	o.parent->init(o.self);
+	// class initialize to o
+	c.init(o);
 	return o;
 }
 
@@ -46,21 +42,19 @@ object __oop_construct(cclass c, const char* nm, ...)
 	va_list va;
 	va_start(va,nm);
 	
-	object o;
-	o.parent = &c;
-	o.self = malloc(o.parent->size);
+	object o = malloc(c.size);
 
-	void* _TEST = o.self;
+	void* _TEST = o;
 	_OOP_MEM_CHECK
 
-	o.parent->construct(o.self, nm, va);
+	c.construct(o, nm, va);
 	va_end(va);
 	return o;
 }
 
 object __oop_delete(object o)
 {
-	free(o.self);
+	free(o);
 }
 
 void* _rvfunc_pack(void* ptr, size_t s)
