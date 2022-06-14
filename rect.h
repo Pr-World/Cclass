@@ -30,7 +30,9 @@ void __Rect_construct(void* __object, const char* cname, va_list va)
 		self->b = y;
 	}
 }
-// method of cclass [ all methods to be kept here ]
+// method of cclass [ all methods to be kept here and must return rval i.e return value]
+// to keep value in rval pack it using rval.val = rv_func.pack(&var,sizeof(var));
+
 rval __Rect_method(void* obj, const char* mname, ...)
 {
 	va_list va;
