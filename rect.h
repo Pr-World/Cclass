@@ -11,17 +11,17 @@ struct __Rect_t{
 };
 
 // initialization / creation of cclass
-void __Rect_init(object __object)
+void __Rect_init(c_object __c_object)
 {
-	struct __Rect_t* this = (struct __Rect_t*)__object;
+	struct __Rect_t* this = (struct __Rect_t*)__c_object;
 	this->l = 0;
 	this->b = 0;
 }
 
 // constructor of cclass
-void __Rect_construct(object __object, const char* cname, va_list va)
+void __Rect_construct(c_object __c_object, const char* cname, va_list va)
 {
-	struct __Rect_t* this = (struct __Rect_t*)__object;
+	struct __Rect_t* this = (struct __Rect_t*)__c_object;
 
 	if (cname=="lb")
 	{
@@ -33,12 +33,12 @@ void __Rect_construct(object __object, const char* cname, va_list va)
 // method of cclass [ all methods to be kept here and must return rval i.e return value]
 // to keep value in rval pack it using rval.val = rv_func.pack(&var,sizeof(var));
 
-rval __Rect_method(object __object, const char* mname, ...)
+rval __Rect_method(c_object __c_object, const char* mname, ...)
 {
 	va_list va;
 	va_start(va,mname);
 	
-	struct __Rect_t* this = (struct __Rect_t*)__object;
+	struct __Rect_t* this = (struct __Rect_t*)__c_object;
 
 	if (mname=="print")
 	{

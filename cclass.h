@@ -14,26 +14,38 @@ typedef struct rval
 	char type;
 } rval;
 
-typedef void* object;
+typedef void* c_object;
+
+typedef struct object{
+	c_object self;
+	rval(*method)(c_object,const char*, ...);
+}object;
 
 typedef struct cclass
 {
 	size_t size;
-	void(*init)(object);
-	void(*construct)(object,const char*,va_list);
-	rval(*method)(object,const char*,...);
+	void(*init)(c_object);
+	void(*construct)(c_object,const char*,va_list);
+	rval(*method)(c_object,const char*,...);
 } cclass;
 
-object __oop_create(cclass c)
+object __oop_create(cclass c, ...)
 {
-	object o = malloc(c.size);
-	
-	void* _TEST = o;
+	va_list va;
+	va_start(va,c);
+
+	void* _TEST = malloc(c.size);;
 	// checks for memory
 	_OOP_MEM_CHECK
 
 	// class initialize to o
-	c.init(o);
+	object o = {_TEST, c.method};
+	char* p = va_arg(va,char*);
+	if(p=="construct")
+		c.construct(o.self,va_arg(va,char*),va);
+	else
+		c.init(o.self);
+	va_end(va);
 	return o;
 }
 
@@ -42,19 +54,20 @@ object __oop_construct(cclass c, const char* nm, ...)
 	va_list va;
 	va_start(va,nm);
 	
-	object o = malloc(c.size);
-
-	void* _TEST = o;
+	void* _TEST = malloc(c.size);;
+	// checks for memory
 	_OOP_MEM_CHECK
-
-	c.construct(o, nm, va);
+	object o = {_TEST, c.method};
+	c.construct(o.self, nm, va);
 	va_end(va);
 	return o;
 }
 
 object __oop_delete(object o)
 {
-	free(o);
+	free(o.self);
+	object a = {NULL,NULL};
+	return a;
 }
 
 void* _rvfunc_pack(void* ptr, size_t s)
@@ -128,7 +141,7 @@ __RVAL_FNC_TYPE rv_func = {
 };
 
 // direct functions!
-object(*new)(cclass)=__oop_create;
+object(*new)(cclass, ...)=__oop_create;
 object(*construct)(cclass,const char*, ...)=__oop_construct;
 object(*delete)(object)=__oop_delete;
 
