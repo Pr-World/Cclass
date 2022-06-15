@@ -1,6 +1,10 @@
 #ifndef _CCLASS_H_INCL
-#define _CCLASS_H_INCL
 
+#define _CCLASS_H_INCL
+#define arg_get va_arg
+#define arg_typ va_list
+#define arg_init va_start
+#define arg_end va_end
 #define _OOP_MEM_CHECK if(_TEST==NULL){printf("%s\n","Memory error occured! exitting");exit(10);}
 
 #include <stdarg.h>
@@ -8,69 +12,124 @@
 #include <stdio.h>
 
 // output type used to output multi type var
-typedef struct rval
+typedef struct mval
 {
 	void* val;
-	char type;
-} rval;
+	unsigned int type;
+} mval;
 
 typedef void* c_object;
 
-typedef struct object{
-	c_object self;
-	rval(*method)(c_object,const char*, ...);
-}object;
-
-typedef struct cclass
+typedef struct class
 {
 	size_t size;
-	void(*init)(c_object);
-	void(*construct)(c_object,const char*,va_list);
-	rval(*method)(c_object,const char*,...);
-} cclass;
+	void(*init)(c_object, void*);
+	// returns state if construct happened correctly
+	int (*construct)(c_object, const char*, arg_typ, void*);
+	mval (*method)(c_object, const char*, arg_typ, void*);
+	struct class* __inherited;
+} class;
 
-object __oop_create(cclass c, ...)
+typedef struct object{
+	c_object self;
+	mval(*method)(c_object,const char*, arg_typ, void*);
+	struct class* __inherited;
+}object;
+
+object new(class c, ...)
 {
-	va_list va;
-	va_start(va,c);
+	arg_typ va;
+	arg_init(va,c);
+	void * _TEST;
 
-	void* _TEST = malloc(c.size);;
+	if (c.size==0 && c.__inherited->size!=0)
+		_TEST = malloc(c.__inherited->size);
+	else
+		_TEST = malloc(c.size);
 	// checks for memory
 	_OOP_MEM_CHECK
 
 	// class initialize to o
 	object o = {_TEST, c.method};
-	char* p = va_arg(va,char*);
-	if(p=="construct")
-		c.construct(o.self,va_arg(va,char*),va);
-	else
-		c.init(o.self);
-	va_end(va);
+	char* p = arg_get(va,char*);
+	if(p=="construct"){
+		if (c.construct==NULL)
+			c.__inherited->construct(o.self,arg_get(va,char*),va,c.__inherited->__inherited);
+		else
+			c.construct(o.self,arg_get(va,char*),va,c.__inherited);
+	}else{
+		if (c.init==NULL)
+			c.__inherited->init(o.self,c.__inherited->__inherited);
+		else
+			c.init(o.self,c.__inherited);
+	}
+	o.__inherited = c.__inherited;
+	arg_end(va);
 	return o;
 }
 
-object __oop_construct(cclass c, const char* nm, ...)
+object construct(class c, const char* nm, ...)
 {
-	va_list va;
-	va_start(va,nm);
+	arg_typ va;
+	arg_init(va,nm);
 	
 	void* _TEST = malloc(c.size);;
 	// checks for memory
 	_OOP_MEM_CHECK
 	object o = {_TEST, c.method};
-	c.construct(o.self, nm, va);
-	va_end(va);
+	if (c.construct==NULL){
+		c.__inherited->construct(o.self, nm, va, c.__inherited->__inherited);
+	}else{
+		int f = c.construct(o.self, nm, va, c.__inherited);
+		if (f==0 && c.__inherited!=NULL)
+			c.__inherited->construct(o.self, nm, va, c.__inherited->__inherited);
+	}
+	o.__inherited = c.__inherited;
+	arg_end(va);
 	return o;
 }
 
-object __oop_delete(object o)
+object delete(object o)
 {
 	free(o.self);
 	object a = {NULL,NULL};
 	return a;
 }
 
-void* _rvfunc_pack(void* ptr, size_t s)
+mval method(object o, char* nm, ...)
+{
+	arg_typ va;
+	arg_init(va,nm);
+	mval b;
+	if (o.method==NULL){
+		o.__inherited->method(o.self,nm,va,o.__inherited->__inherited);
+	}else{
+		b = o.method(o.self,nm,va, o.__inherited);
+		if (b.type==404 && o.__inherited != NULL)
+			b = o.__inherited->method(o.self,nm,va,o.__inherited->__inherited);
+	}
+	arg_end(va);
+	return b;
+}
+
+mval internal_method(class* c, c_object o, const char* nm, ...)
+{
+
+	arg_typ va;
+	arg_init(va,nm);
+	mval b;
+	if (c->method==NULL){
+		c->__inherited->method(o,nm,va,c->__inherited->__inherited);
+	}else{
+		b = c->method(o,nm,va, c->__inherited);
+		if (b.type==404 && c->__inherited != NULL)
+			b = c->__inherited->method(o,nm,va,c->__inherited->__inherited);
+	}
+	arg_end(va);
+	return b;
+}
+
+void* _mvfunc_pack(void* ptr, size_t s)
 {
 	void* _TEST = malloc(s);
 	_OOP_MEM_CHECK
@@ -82,67 +141,64 @@ void* _rvfunc_pack(void* ptr, size_t s)
 	return _TEST;
 }
 
-void _rvfunc_done(rval a)
+mval _mvfunc_done(mval a)
 {
 	free(a.val);
+	mval b = {NULL,200};
+	return b;
 }
 
-int _rvfunc_getint(rval r){
+int _mvfunc_getint(mval r){
 	return ((int*)(r.val))[0];
 }
 
-char _rvfunc_getchr(rval r){
+char _mvfunc_getchr(mval r){
 	return ((char*)(r.val))[0];
 }
 
-char* _rvfunc_getstr(rval r){
+char* _mvfunc_getstr(mval r){
 	return (char*)(r.val);
 }
 
-double _rvfunc_getdbl(rval r){
+double _mvfunc_getdbl(mval r){
 	return ((double*)(r.val))[0];
 }
 
-float _rvfunc_getflt(rval r){
+float _mvfunc_getflt(mval r){
 	return ((float*)(r.val))[0];
 }
 
-/* -- UNCOMMENT TO ADD oop.create etc functions
+/* -- UNCOMMENT TO ADD oop.new etc functions
 typedef struct __OOP_TYPE
 {
-	object(*create)(cclass);
-	object(*construct)(cclass,const char*,int,...);
+	object(*new)(class);
+	object(*construct)(class,const char*,int,...);
 	object(*delete)(object);
 } __OOP_TYPE;
 
 // pack to oop
 __OOP_TYPE oop = {
-	__oop_create,__oop_construct,__oop_delete
+	new,construct,delete
 };
 */
 
 
-// rval function type
-typedef struct __RVAL_FNC_TYPE
+// mval function type
+typedef struct __MVAL_FNC_TYPE
 {
 	void*(*pack)(void*,size_t);
-	void(*done)(rval);
-	int(*get_int)(rval);
-	char(*get_chr)(rval);
-	char*(*get_str)(rval);
-	double(*get_dbl)(rval);
-	float(*get_flt)(rval);
-} __RVAL_FNC_TYPE;
+	mval(*done)(mval);
+	int(*get_int)(mval);
+	char(*get_chr)(mval);
+	char*(*get_str)(mval);
+	double(*get_dbl)(mval);
+	float(*get_flt)(mval);
+} __MVAL_FNC_TYPE;
 
-// pack rval function to rv_func
-__RVAL_FNC_TYPE rv_func = {
-	_rvfunc_pack,_rvfunc_done,_rvfunc_getint,_rvfunc_getchr,_rvfunc_getstr,
-	_rvfunc_getdbl,_rvfunc_getflt
+// pack mval function to mvf
+__MVAL_FNC_TYPE mvf = {
+	_mvfunc_pack,_mvfunc_done,_mvfunc_getint,_mvfunc_getchr,_mvfunc_getstr,
+	_mvfunc_getdbl,_mvfunc_getflt
 };
-
-// direct functions!
-object(*new)(cclass, ...)=__oop_create;
-object(*construct)(cclass,const char*, ...)=__oop_construct;
-object(*delete)(object)=__oop_delete;
 
 #endif
