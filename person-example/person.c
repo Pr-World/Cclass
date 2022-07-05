@@ -9,11 +9,11 @@ typedef struct
 	char gender;
 }Person_Struct;
 
-// Person::Person(void);
+// Creation of object heres
 void  Person_Create ( actual_obj act_obj, cclass* super )
 {
-	// just to bypass unused params [ we dont need super because there is no inheritance ]
-	if ( super== NULL ) {}
+	// unused parameters warn bypass
+	warn_bypass(super);
 
 	// makeup 'this' object / variable
 	Person_Struct* this = ( Person_Struct* ) act_obj;
@@ -24,11 +24,11 @@ void  Person_Create ( actual_obj act_obj, cclass* super )
 
 }
 
-// Person::Person(.....);
+// Construct here
 void Person_Construct ( actual_obj act_obj, const char* type, va_list args, cclass* super )
 {
-	// just to bypass unused params [ we dont need super because there is no inheritance ]
-	if ( super== NULL ) {}
+	// unused parameters warn bypass
+	warn_bypass(super);
 
 	// makeup 'this' object / variable
 	Person_Struct* this = ( Person_Struct* ) act_obj;
@@ -45,11 +45,12 @@ void Person_Construct ( actual_obj act_obj, const char* type, va_list args, ccla
 	}
 }
 
-// Person::MethodName(....);
+// Method of object
 multi_type Person_Method( actual_obj act_obj, const char* method_name, va_list args, cclass* super )
 {
-	// just to bypass unused params [ we dont need super because there is noinheritance ]
-	if ( super == NULL || args == NULL ) {}
+	// unused parameters warn bypass
+	warn_bypass(super);
+	warn_bypass(&args);
 
 	// makeup 'this' object / variable
 	Person_Struct* this = ( Person_Struct* ) act_obj;
@@ -93,6 +94,14 @@ multi_type Person_Method( actual_obj act_obj, const char* method_name, va_list a
 	}
 }
 
+// code when the object is about to be deleted [ if you need to free memory n stuff ]
+void Person_Delete( actual_obj obj, cclass* super )
+{
+	// unused parameters warn bypass
+	warn_bypass(obj);
+	warn_bypass(super);
+}
+
 // sizeof class
 size_t Person_Size = sizeof(Person_Struct);
 
@@ -102,6 +111,6 @@ cclass person = {
 	Person_Create,
 	Person_Construct,
 	Person_Method,
-	NULL, // because we don't need delete function to free anything
+	Person_Delete,
 	NULL // because we don't have inheritence
 };

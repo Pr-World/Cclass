@@ -322,3 +322,13 @@ void inherit_delete ( actual_obj act_obj, cclass* super )
 }
 
 // ----------------- < / Inherit Functions > --------------------
+
+
+// ------------------ < Warn bypass > ----------------------
+
+void warn_bypass( void* thing )
+{
+	if ( thing == NULL || thing != NULL){}
+}
+
+// ------------------ < / Warn bypass > ----------------------

@@ -79,6 +79,9 @@ object;
 object new ( cclass );
 object construct ( cclass, const char*, ... );
 
+// memory checker
+void cclass_check_memory( void* );
+
 /*
 ------------- Standard "multi_type" Types --------------
 
@@ -179,5 +182,9 @@ multi_type inherit_method ( actual_obj, cclass *, const char*, ... );
 void inherit_delete ( actual_obj, cclass* );
 
 // ----------- < / functions for helping inheritence > --------------
+
+// ---------- < Warning bypass functions >
+
+void warn_bypass(void * thing);
 
 #endif
