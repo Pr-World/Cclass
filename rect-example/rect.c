@@ -60,6 +60,28 @@ multi_type Rect_Method ( actual_obj obj, const char* name, va_list args, cclass*
 		printf("Rect(length=%d, breadth=%d)\n", this -> l, this -> b);
 		return toRet;
 	}
+	else if( isEq(name, "getArea") )
+	{
+		// calculate area
+		int area = this -> l * this -> b;
+
+		// integer type
+		toRet.type = 300;
+		toRet.value = &area;
+
+		return toRet;
+	}
+	else if( isEq(name, "getPerimeter") )
+	{
+		// calculate perimeter
+		int p = 2 * ( this -> l + this -> b );
+
+		// integer type
+		toRet.type = 300;
+		toRet.value = &p;
+
+		return toRet;
+	}
 	else
 	{
 		toRet.type = 401;
